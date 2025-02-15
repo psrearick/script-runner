@@ -1,6 +1,6 @@
 from pathlib import Path
 from .runner import run_script
-from .config import Registry, ScriptNotFoundError
+from .config import AliasNotFoundError, Registry, ScriptNotFoundError
 import click
 
 @click.group()
@@ -53,11 +53,23 @@ def update(name: str, path: Path, alias: str, venv: Path, no_venv: bool):
 
 @cli.command()
 @click.argument('name', type=str)
-def delete(name: str):
-    """Delete a registered script or directory"""
+def delete_alias(name: str):
+    """Delete a registered alias"""
     registry = Registry()
     try:
-        registry.delete_script(name)
+        registry.delete_alias(name)
+    except AliasNotFoundError as e:
+        click.echo(e)
+    except:
+        click.echo('Failed to Delete Item')
+
+@cli.command()
+@click.argument('path', type=click.Path(exists=True, resolve_path=True, path_type=Path))
+def delete_path(path: Path):
+    """Delete all aliases for file or directory"""
+    registry = Registry()
+    try:
+        registry.delete_script(path)
     except ScriptNotFoundError as e:
         click.echo(e)
     except:
