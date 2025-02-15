@@ -3,6 +3,24 @@ from pathlib import Path
 from typing import Optional
 from uuid import UUID, uuid4
 
+class ScriptNotFoundError(Exception):
+    def __init__(self, message="Script or directory not found in registry", value=None):
+        self.message = message
+        self.value = value
+        super().__init__(self.message)
+
+class DuplicateScriptError(Exception):
+    def __init__(self, message="Script already in registry", value=None):
+        self.message = message
+        self.value = value
+        super().__init__(self.message)
+
+class DuplicateAliasError(Exception):
+    def __init__(self, message="Alias already in use", value=None):
+        self.message = message
+        self.value = value
+        super().__init__(self.message)
+
 class Registry:
     def __init__(self):
         self.config_dir = Path.home() / ".config" / "script_runner"
@@ -12,8 +30,8 @@ class Registry:
         self._load()
 
     def _load(self):
-        self.scripts = self._load_json(self.scripts_file)
-        self.directories = self._load_json(self.directories_file)
+        self.scripts: dict = self._load_json(self.scripts_file)
+        self.directories: dict = self._load_json(self.directories_file)
 
     def _load_json(self, path: Path):
         if path.exists():
@@ -25,7 +43,11 @@ class Registry:
         self.directories_file.write_text(json.dumps(self.directories, indent=2))
 
     def _add_single_script(self, script: Path, alias: Optional[str] = None, dir_id: Optional[UUID] = None, venv: Optional[Path] = None, venv_depth: int = 3):
-        pass
+        if alias in [s.alias for s in list(self.scripts.values)]:
+            raise DuplicateAliasError
+
+        if str(script) in [s.path for s in list(self.scripts.values)]:
+            raise DuplicateScriptError
 
     def add_script(self, path: Path, alias: Optional[str]=None, venv: Optional[Path]=None, venv_depth: int = 3):
         if path.is_dir():
@@ -41,7 +63,7 @@ class Registry:
         self._save()
 
     def delete_script(self, script: str):
-        pass
+        raise ScriptNotFoundError
 
     def get_script(self, script: str):
         pass

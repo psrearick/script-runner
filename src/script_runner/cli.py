@@ -1,6 +1,6 @@
 from pathlib import Path
 from .runner import run_script
-from .config import Registry
+from .config import DuplicateAliasError, DuplicateScriptError, Registry, ScriptNotFoundError
 import click
 
 @click.group()
@@ -19,7 +19,12 @@ def add(path: Path, alias: str, venv_depth: int, venv: Path, no_venv: bool):
     registry = Registry()
     if no_venv:
         venv = False
-    registry.add_script(path, alias=alias, venv=venv, venv_depth=venv_depth)
+    try:
+        registry.add_script(path, alias=alias, venv=venv, venv_depth=venv_depth)
+    except DuplicateAliasError|DuplicateScriptError as e:
+        click.echo(e)
+    except:
+        click.echo('Failed to add script')
 
 @cli.command()
 @click.argument('script', type=str)
@@ -44,6 +49,8 @@ def update(name: str, path: Path, alias: str, venv: Path, no_venv: bool):
     registry = Registry()
     try:
         registry.update_script(name, path, alias, venv, no_venv)
+    except ScriptNotFoundError as e:
+        click.echo(e)
     except:
         click.echo('Failed to Update Registry')
 
@@ -54,6 +61,8 @@ def delete(name: str):
     registry = Registry()
     try:
         registry.delete_script(name)
+    except ScriptNotFoundError as e:
+        click.echo(e)
     except:
         click.echo('Failed to Delete Item')
 
@@ -70,6 +79,8 @@ def update_dir(directory: str):
     registry = Registry()
     try:
         registry.update_directory(directory)
+    except ScriptNotFoundError as e:
+        click.echo(e)
     except:
         click.echo('Failed to Update Directory')
 
