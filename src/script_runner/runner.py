@@ -27,6 +27,7 @@ def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple()):
             stderr=subprocess.PIPE,
             check=True
         )
+        print(result.stdout)
         return result
     except subprocess.CalledProcessError as e:
         print(f"Script failed with exit code {e.returncode}")

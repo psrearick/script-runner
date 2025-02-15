@@ -32,11 +32,14 @@ def add(path: Path, alias: str, venv_depth: int = 3, venv: Optional[Path] = None
 def run(script: str, args: Tuple[Any] = tuple()):
     """Run a registered script"""
     registry = Registry()
-    script_info = registry.get_script(script)
-    if script_info:
-        run_script(script_info, args)
-    else:
-        click.echo(f"Script '{script}' not found")
+    try:
+        script_info = registry.get_script(script)
+        if script_info:
+            run_script(script_info, args)
+        else:
+            click.echo(f"Script '{script}' not found")
+    except Exception as e:
+        print(e)
 
 @cli.command()
 @click.argument('name', type=str)
