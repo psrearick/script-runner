@@ -1,4 +1,3 @@
-# pyproject.toml
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -6,6 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "script_runner"
 version = "0.1.0"
+description = "Run Python scripts with their virtual environments"
+requires-python = ">=3.8"
 dependencies = [
     "click>=8.0",
 ]
