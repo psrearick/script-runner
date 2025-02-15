@@ -1,6 +1,6 @@
 from pathlib import Path
 from .runner import run_script
-from .config import DuplicateAliasError, DuplicateScriptError, Registry, ScriptNotFoundError
+from .config import Registry, ScriptNotFoundError
 import click
 
 @click.group()
@@ -9,22 +9,19 @@ def cli():
     pass
 
 @cli.command()
-@click.argument('path', type=click.Path(exists=True, resolve_path=True))
+@click.argument('path', type=click.Path(exists=True, resolve_path=True, path_type=Path))
 @click.option('--alias', '-a', type=str, help='Alias for the script.')
 @click.option('--venv-depth', '-d', type=int, default=3, show_default=True, help='Number of ancestors to search for virtual environment.')
-@click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True), help='Path to virtual environment.')
+@click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='Path to virtual environment.')
 @click.option('--no-venv', '-n', is_flag=True, show_default=True, default=False, help='Do not use a virtual environment.')
-def add(path: Path, alias: str, venv_depth: int, venv: Path, no_venv: bool):
+@click.option('--force', '-f', is_flag=True, show_default=True, default=False, help='Do not prompt for duplicate checks.')
+def add(path: Path, alias: str, venv_depth: int, venv: Path, no_venv: bool, force: bool):
     """Add a script or directory to the registry"""
     registry = Registry()
     if no_venv:
         venv = False
-    try:
-        registry.add_script(path, alias=alias, venv=venv, venv_depth=venv_depth)
-    except DuplicateAliasError|DuplicateScriptError as e:
-        click.echo(e)
-    except:
-        click.echo('Failed to add script')
+
+    registry.add_script(path, alias=alias, venv=venv, venv_depth=venv_depth, force=force)
 
 @cli.command()
 @click.argument('script', type=str)
@@ -40,9 +37,9 @@ def run(script: str, args):
 
 @cli.command()
 @click.argument('name', type=str)
-@click.option('--path', 'p', type=click.Path(exists=True, resolve_path=True), help='The new path to the registered script.')
+@click.option('--path', 'p', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='The new path to the registered script.')
 @click.option('--alias', '-a', type=str, help='New alias for the directory or script.')
-@click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True), help='Path to new virtual environment.')
+@click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='Path to new virtual environment.')
 @click.option('--no-venv', '-n', is_flag=True, show_default=True, default=False, help='Remove the virtual environment in the registry.')
 def update(name: str, path: Path, alias: str, venv: Path, no_venv: bool):
     """Update a registered script or directory"""
