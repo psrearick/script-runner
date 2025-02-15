@@ -57,14 +57,6 @@ class Registry:
 
         raise ScriptNotFoundError
 
-
-
-
-
-
-
-
-
     def prune(self):
         pass
 
