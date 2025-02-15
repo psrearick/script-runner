@@ -8,12 +8,12 @@ def get_venv(script: Path, max_depth: int = 3, depth: int = 1) -> Optional[Path]
     if not script.parent:
         return None
 
-    venv_path = script.parent.rglob("pyvenv.cfg")
+    venv_path_matches = list(script.parent.rglob("pyvenv.cfg"))
 
-    if not venv_path:
-        return get_venv(script=script, max_depth=max_depth, depth=depth + 1)
+    if not any(venv_path_matches):
+        return get_venv(script=script.parent, max_depth=max_depth, depth=depth + 1)
 
-    return list(venv_path)[0].parent
+    return list(venv_path_matches)[0].parent
 
 def path_distance(path1: Path, path2: Path):
     """

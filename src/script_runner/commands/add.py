@@ -8,24 +8,40 @@ from ..utils import get_venv
 if TYPE_CHECKING:
     from ..config import Registry
 
-
 class AddResponse(Enum):
     SKIP = 1
     CANCEL = 2
-    ADDED = 3
+    ADD = 3
     FAILED = 4
+
+class SingleAliasMatch(str, Enum):
+    CANCEL = "Cancel"
+    OVERWRITE = "Overwrite Existing Alias"
+    SKIP = "Skip Script"
+
+class SingleScriptMatch(str, Enum):
+    CANCEL = "Cancel"
+    OVERWRITE = "Overwrite Existing Alias"
+    CREATE = "Create Another Alias"
+    SKIP = "Skip Script"
+
+class MultiScriptMatch(str, Enum):
+    CANCEL = "Cancel"
+    REMOVE = "Remove Existing Aliases Before Adding"
+    CREATE = "Create Another Alias"
+    SKIP = "Skip Script"
 
 class AddScript():
     def __init__(self, registry: "Registry"):
         self.registry = registry
 
     def _verify_single_matching_path(self, script: Path, alias: str, dir_id: Optional[str] = None) -> AddResponse:
-        options = ["Cancel", "Overwrite Existing Alias", "Create Another Alias"]
+        options = [SingleScriptMatch.CANCEL, SingleScriptMatch.OVERWRITE, SingleScriptMatch.CANCEL]
 
         if dir_id:
-            options.append("Skip")
+            options.append(SingleScriptMatch.SKIP)
 
-        options_string = "\n".join([f"[{i + 1}] {option}" for i, option in enumerate(options)])
+        options_string = "\n".join([f"[{i + 1}] {option.value}" for i, option in enumerate(options)])
         alias_exists: int = click.prompt(
             f"""
             The script "{script}" already has an alias: {alias}.
@@ -34,22 +50,22 @@ class AddScript():
         )
 
         selection = options[alias_exists]
-        if selection == "Skip":
+        if selection == SingleScriptMatch.SKIP:
             return AddResponse.SKIP
-        if selection == "Cancel":
+        if selection == SingleScriptMatch.CANCEL:
             return AddResponse.CANCEL
-        if selection == "Overwrite Existing Alias":
+        if selection == SingleScriptMatch.OVERWRITE:
             self.registry.delete_alias(alias)
 
-        return AddResponse.ADDED
+        return AddResponse.ADD
 
     def _verify_multiple_matching_paths(self, script: Path, aliases: List[str], dir_id: Optional[str] = None) -> AddResponse:
-        options = ["Cancel", "Remove Existing Aliases Before Adding", "Create Another Alias"]
+        options = [MultiScriptMatch.CANCEL, MultiScriptMatch.REMOVE, MultiScriptMatch.CREATE]
 
         if dir_id:
-            options.append("Skip")
+            options.append(MultiScriptMatch.SKIP)
 
-        options_string = "\n".join([f"[{i + 1}] {option}" for i, option in enumerate(options)])
+        options_string = "\n".join([f"[{i + 1}] {option.value}" for i, option in enumerate(options)])
         alias_exists: int = click.prompt(
             f"""
             The script "{script}" already has aliases: {", ".join(aliases)}.\n
@@ -57,40 +73,41 @@ class AddScript():
             type=click.IntRange(1, len(options))
         )
 
-        selection = options[alias_exists]
-        if selection == "Skip":
+        selection = options[alias_exists - 1]
+        if selection == MultiScriptMatch.SKIP:
             return AddResponse.SKIP
-        if selection == "Cancel":
+        if selection == MultiScriptMatch.CANCEL:
             return AddResponse.CANCEL
-        if selection == "Remove Existing Aliases Before Adding":
+        if selection == MultiScriptMatch.REMOVE:
             self.registry.delete_script(script)
 
-        return AddResponse.ADDED
+        return AddResponse.ADD
 
     def _validate_alias_to_add(self, alias: str, force: bool = False, dir_id: Optional[str] = None) -> AddResponse:
         if alias in [s["alias"] for s in self.registry.scripts] and not force:
-            options = ["Cancel", "Overwrite"]
+            options = [SingleAliasMatch.CANCEL, SingleAliasMatch.OVERWRITE]
             if dir_id:
-                options.append("Skip")
-            options_string = "\n".join([f"[{i + 1}] {option}" for i, option in enumerate(options)])
+                options.append(SingleAliasMatch.SKIP)
+            options_string = "\n".join([f"[{i + 1}] {option.value}" for i, option in enumerate(options)])
             alias_exists: int = click.prompt(
                 f"The alias \"{alias}\" already exists. What do you want to do?\n\n{ options_string }\n\nSelection",
                 type=click.IntRange(1, len(options))
             )
 
-            selection = options[alias_exists]
-            if selection == "Skip":
+            selection = options[alias_exists - 1]
+
+            if selection == SingleAliasMatch.SKIP:
                 return AddResponse.SKIP
-            if selection == "Cancel":
+            if selection == SingleAliasMatch.CANCEL:
                 return AddResponse.CANCEL
 
-        return AddResponse.ADDED
+        return AddResponse.ADD
 
     def _validate_path_to_add(self, script: Path, force: bool = False, dir_id: Optional[str] = None) -> AddResponse:
         existing_path_aliases = [s["alias"] for s in self.registry.scripts if s["path"] == str(script)]
 
         if not existing_path_aliases:
-            return AddResponse.ADDED
+            return AddResponse.ADD
 
         if len(existing_path_aliases) == 1 and not force:
             return self._verify_single_matching_path(script, existing_path_aliases[0], dir_id)
@@ -104,11 +121,11 @@ class AddScript():
             alias = script.stem
 
         validated_alias = self._validate_alias_to_add(alias, force, dir_id)
-        if validated_alias != AddResponse.ADDED:
+        if validated_alias != AddResponse.ADD:
             return validated_alias
 
         validated_paths = self._validate_path_to_add(script, force, dir_id)
-        if validated_paths != AddResponse.ADDED:
+        if validated_paths != AddResponse.ADD:
             return validated_paths
 
         if not venv:
@@ -121,7 +138,7 @@ class AddScript():
             "venv": str(venv),
         })
 
-        return AddResponse.ADDED
+        return AddResponse.ADD
 
     def add_script(self,
                 path: Path, alias: Optional[str]=None, venv: Optional[Path]=None,
@@ -134,8 +151,16 @@ class AddScript():
                 "venv": str(venv) if venv else ""
             })
             for script in path.rglob("*.py"):
-                self._add_single_script(script, dir_id=dir_id, venv=venv, venv_depth=venv_depth, force=force)
-        else:
-            self._add_single_script(path, alias=alias, venv=venv, venv_depth=venv_depth, force=force)
+                response = self._add_single_script(script, dir_id=dir_id, venv=venv, venv_depth=venv_depth, force=force)
+                if response == AddResponse.CANCEL or response == AddResponse.FAILED:
+                    return
+                if response == AddResponse.SKIP:
+                    continue
+                self.registry.save()
+            return
+
+        response = self._add_single_script(path, alias=alias, venv=venv, venv_depth=venv_depth, force=force)
+        if response != AddResponse.ADD:
+            return
 
         self.registry.save()
