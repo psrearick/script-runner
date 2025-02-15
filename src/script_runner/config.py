@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 from typing import Dict, List, Optional
-from script_runner.commands.add import AddScript
-from script_runner.commands.delete import DeleteScript
+from .commands.add import AddScript
+from .commands.delete import DeleteScript
 
 class Registry:
     def __init__(self):
