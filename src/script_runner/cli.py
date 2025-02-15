@@ -1,6 +1,9 @@
 from pathlib import Path
+from typing import Any, Optional, Tuple
+
+from script_runner.exceptions import AliasNotFoundError, ScriptNotFoundError
 from .runner import run_script
-from .config import AliasNotFoundError, Registry, ScriptNotFoundError
+from .config import Registry
 import click
 
 @click.group()
@@ -15,18 +18,18 @@ def cli():
 @click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='Path to virtual environment.')
 @click.option('--no-venv', '-n', is_flag=True, show_default=True, default=False, help='Do not use a virtual environment.')
 @click.option('--force', '-f', is_flag=True, show_default=True, default=False, help='Do not prompt for duplicate checks.')
-def add(path: Path, alias: str, venv_depth: int, venv: Path, no_venv: bool, force: bool):
+def add(path: Path, alias: str, venv_depth: int = 3, venv: Optional[Path] = None, no_venv: bool = False, force: bool = False):
     """Add a script or directory to the registry"""
     registry = Registry()
     if no_venv:
-        venv = False
+        venv = None
 
     registry.add_script(path, alias=alias, venv=venv, venv_depth=venv_depth, force=force)
 
 @cli.command()
 @click.argument('script', type=str)
 @click.argument('args', nargs=-1)
-def run(script: str, args):
+def run(script: str, args: Tuple[Any] = tuple()):
     """Run a registered script"""
     registry = Registry()
     script_info = registry.get_script(script)
@@ -41,11 +44,14 @@ def run(script: str, args):
 @click.option('--alias', '-a', type=str, help='New alias for the directory or script.')
 @click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='Path to new virtual environment.')
 @click.option('--no-venv', '-n', is_flag=True, show_default=True, default=False, help='Remove the virtual environment in the registry.')
-def update(name: str, path: Path, alias: str, venv: Path, no_venv: bool):
+def update(name: str, path: Path, alias: str, venv: Optional[Path] = None, no_venv: bool = False):
     """Update a registered script or directory"""
+    if no_venv:
+        venv = None
+
     registry = Registry()
     try:
-        registry.update_script(name, path, alias, venv, no_venv)
+        registry.update_script(name, path, alias, venv)
     except ScriptNotFoundError as e:
         click.echo(e)
     except:

@@ -1,8 +1,9 @@
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
-def run_script(script_info: dict, args=()):
+def run_script(script_info: Dict[str, Any], args: Tuple[Any]=tuple()):
     script = Path(script_info['path']).resolve()
     venv = Path(script_info.get("venv", sys.executable)).resolve()
 
@@ -16,7 +17,7 @@ def run_script(script_info: dict, args=()):
     if not python_path.exists():
         raise FileNotFoundError(f"Python executable not found in: {python_path}")
 
-    cmd = [str(python_path), str(script), *args]
+    cmd: List[Any] = [str(python_path), str(script), *args]
 
     try:
         result = subprocess.run(
