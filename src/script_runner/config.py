@@ -42,12 +42,18 @@ class Registry:
         self.scripts_file.write_text(json.dumps(self.scripts, indent=2))
         self.directories_file.write_text(json.dumps(self.directories, indent=2))
 
+    def _get_venv(script: Path, venv_depth: int = 3):
+        venv_path = script.parent.rglob()
+
     def _add_single_script(self, script: Path, alias: Optional[str] = None, dir_id: Optional[UUID] = None, venv: Optional[Path] = None, venv_depth: int = 3):
         if alias in [s.alias for s in list(self.scripts.values)]:
             raise DuplicateAliasError
 
         if str(script) in [s.path for s in list(self.scripts.values)]:
             raise DuplicateScriptError
+
+        if not venv:
+            venv = self._get_venv(script, venv_depth)
 
     def add_script(self, path: Path, alias: Optional[str]=None, venv: Optional[Path]=None, venv_depth: int = 3):
         if path.is_dir():
