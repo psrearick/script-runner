@@ -1,11 +1,13 @@
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from uuid import uuid4
-
 import click
-from script_runner.config import Registry
-from script_runner.utils import get_venv
+from ..utils import get_venv
+
+if TYPE_CHECKING:
+    from ..config import Registry
+
 
 class AddResponse(Enum):
     SKIP = 1
@@ -14,7 +16,7 @@ class AddResponse(Enum):
     FAILED = 4
 
 class AddScript():
-    def __init__(self, registry: Registry):
+    def __init__(self, registry: "Registry"):
         self.registry = registry
 
     def _verify_single_matching_path(self, script: Path, alias: str, dir_id: Optional[str] = None) -> AddResponse:

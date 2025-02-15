@@ -1,9 +1,12 @@
 from pathlib import Path
-from script_runner.config import Registry
-from script_runner.exceptions import AliasNotFoundError, ScriptNotFoundError
+from typing import TYPE_CHECKING
+from ..exceptions import AliasNotFoundError, ScriptNotFoundError
+
+if TYPE_CHECKING:
+    from ..config import Registry
 
 class DeleteScript():
-    def __init__(self, registry: Registry):
+    def __init__(self, registry: "Registry"):
         self.registry = registry
 
     def delete_alias(self, alias: str):
