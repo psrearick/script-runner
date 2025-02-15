@@ -25,7 +25,6 @@ class Registry:
         self.scripts_file.write_text(json.dumps(self.scripts, indent=2))
         self.directories_file.write_text(json.dumps(self.directories, indent=2))
 
-
     def delete_alias(self, alias: str):
         remover = DeleteScript(self)
         remover.delete_alias(alias)

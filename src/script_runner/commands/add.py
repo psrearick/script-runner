@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Optional, TYPE_CHECKING
 from uuid import uuid4
 import click
-from ..utils import get_venv
+from ..utils import get_runnable_scripts, get_venv
 
 if TYPE_CHECKING:
     from ..config import Registry
@@ -150,7 +150,7 @@ class AddScript():
                 "path": str(path),
                 "venv": str(venv) if venv else ""
             })
-            for script in path.rglob("*.py"):
+            for script in get_runnable_scripts(path, False):
                 response = self._add_single_script(script, dir_id=dir_id, venv=venv, venv_depth=venv_depth, force=force)
                 if response == AddResponse.CANCEL or response == AddResponse.FAILED:
                     return
