@@ -135,7 +135,7 @@ class AddScript():
             "path": str(script),
             "alias": alias,
             "directory_id": dir_id if dir_id else "",
-            "venv": str(venv),
+            "venv": str(venv) if venv else "",
         })
 
         return AddResponse.ADD
