@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 from typing import Dict, List, Optional
+
+from .exceptions import ScriptNotFoundError
 from .commands.add import AddScript
 from .commands.delete import DeleteScript
 
@@ -40,8 +42,28 @@ class Registry:
         adder.add_script(path=path, alias=alias,
                         venv=venv, venv_depth=venv_depth, force=force)
 
-    def get_script(self, script: str):
-        pass
+    def get_script(self, identifier: str) -> Optional[Dict[str, str]]:
+        alias_match: List[Dict[str, str]] = []
+
+        for script in self.scripts:
+            if script["path"] == identifier:
+                return script
+
+            if identifier == script["alias"]:
+                alias_match.append(script)
+
+        if len(alias_match) == 1:
+            return alias_match[0]
+
+        raise ScriptNotFoundError
+
+
+
+
+
+
+
+
 
     def prune(self):
         pass

@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-def run_script(script_info: Dict[str, Any], args: Tuple[Any]=tuple()):
+def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple()):
     script = Path(script_info['path']).resolve()
     venv = Path(script_info.get("venv", sys.executable)).resolve()
 
