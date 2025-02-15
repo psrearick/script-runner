@@ -39,7 +39,7 @@ def run(script: str, args: Tuple[Any] = tuple()):
         else:
             click.echo(f"Script '{script}' not found")
     except Exception as e:
-        print(e)
+        click.echo(e)
 
 @cli.command()
 @click.argument('name', type=str)

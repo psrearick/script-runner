@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+import click
+
 def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple()):
     script = Path(script_info['path']).resolve()
     venv = Path(script_info.get("venv", sys.executable)).resolve()
@@ -27,9 +29,9 @@ def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple()):
             stderr=subprocess.PIPE,
             check=True
         )
-        print(result.stdout.rstrip("\n"))
+        click.echo(result.stdout.rstrip("\n"))
     except subprocess.CalledProcessError as e:
-        print(f"Script failed with exit code {e.returncode}")
-        print("stdout: " + e.stdout.rstrip("\n"))
-        print("stderr: " + e.stderr.rstrip("\n"))
+        click.echo(f"Script failed with exit code {e.returncode}")
+        click.echo("stdout: " + e.stdout.rstrip("\n"))
+        click.echo("stderr: " + e.stderr.rstrip("\n"))
         raise
