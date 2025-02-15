@@ -16,8 +16,9 @@ class DeleteScript():
 
     def delete_script(self, path: Path):
         delete_count = 0
-        delete_script_path = path.resolve()
-        if not delete_script_path.exists():
+        try:
+            delete_script_path = path.resolve()
+        except:
             raise ScriptNotFoundError
 
         for idx in range(len(self.registry.scripts) - 1, -1, -1):

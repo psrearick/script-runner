@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import click
 from script_runner.config import Registry
+from script_runner.utils import get_venv
 
 class AddResponse(Enum):
     SKIP = 1
@@ -65,7 +66,7 @@ class AddScript():
         return AddResponse.ADDED
 
     def _validate_alias_to_add(self, alias: str, force: bool = False, dir_id: Optional[str] = None) -> AddResponse:
-        if alias in [s.alias for s in self.registry.scripts] and not force:
+        if alias in [s["alias"] for s in self.registry.scripts] and not force:
             options = ["Cancel", "Overwrite"]
             if dir_id:
                 options.append("Skip")
@@ -84,7 +85,7 @@ class AddScript():
         return AddResponse.ADDED
 
     def _validate_path_to_add(self, script: Path, force: bool = False, dir_id: Optional[str] = None) -> AddResponse:
-        existing_path_aliases = [s["alias"] for s in self.registry.scripts if s.path == str(script)]
+        existing_path_aliases = [s["alias"] for s in self.registry.scripts if s["path"] == str(script)]
 
         if not existing_path_aliases:
             return AddResponse.ADDED
@@ -109,7 +110,7 @@ class AddScript():
             return validated_paths
 
         if not venv:
-            venv = self.registry._get_venv(script, max_depth = venv_depth, depth = 1)
+            venv = get_venv(script, max_depth = venv_depth, depth = 1)
 
         self.registry.scripts.append({
             "path": str(script),
@@ -125,12 +126,14 @@ class AddScript():
                 venv_depth: int = 3, force: bool = False):
         if path.is_dir():
             dir_id = str(uuid4())
-            self.directories[dir_id] = {
+            self.registry.directories.append({
+                "id": dir_id,
                 "path": str(path),
-                "venv": str(venv) if venv else None
-            }
+                "venv": str(venv) if venv else ""
+            })
             for script in path.rglob("*.py"):
                 self._add_single_script(script, dir_id=dir_id, venv=venv, venv_depth=venv_depth, force=force)
         else:
             self._add_single_script(path, alias=alias, venv=venv, venv_depth=venv_depth, force=force)
-        self.registry._save()
+
+        self.registry.save()

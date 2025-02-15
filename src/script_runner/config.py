@@ -21,23 +21,10 @@ class Registry:
             return json.loads(path.read_text())
         return []
 
-    def _save(self):
+    def save(self):
         self.scripts_file.write_text(json.dumps(self.scripts, indent=2))
         self.directories_file.write_text(json.dumps(self.directories, indent=2))
 
-    def _get_venv(self, script: Path, max_depth: int = 3, depth: int = 1) -> Optional[Path]:
-        if depth > max_depth:
-            return None
-
-        if not script.parent:
-            return None
-
-        venv_path = script.parent.rglob("pyvenv.cfg")
-
-        if not venv_path:
-            return self._get_venv(script=script, max_depth=max_depth, depth=depth + 1)
-
-        return list(venv_path)[0].parent
 
     def delete_alias(self, alias: str):
         remover = DeleteScript(self)
