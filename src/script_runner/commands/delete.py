@@ -38,7 +38,7 @@ class DeleteScript():
             if script_path == delete_script_path:
                 del self.registry.scripts[idx]
                 delete_count += 1
-                break
+                continue
 
         if delete_count == 0:
             raise ScriptNotFoundError

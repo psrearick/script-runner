@@ -36,7 +36,7 @@ class AddScript():
         self.registry = registry
 
     def _verify_single_matching_path(self, script: Path, alias: str, dir_id: Optional[str] = None) -> AddResponse:
-        options = [SingleScriptMatch.CANCEL, SingleScriptMatch.OVERWRITE, SingleScriptMatch.CANCEL]
+        options = [SingleScriptMatch.CANCEL, SingleScriptMatch.OVERWRITE, SingleScriptMatch.CREATE]
 
         if dir_id:
             options.append(SingleScriptMatch.SKIP)
@@ -49,7 +49,7 @@ class AddScript():
             type=click.IntRange(1, len(options))
         )
 
-        selection = options[alias_exists]
+        selection = options[alias_exists - 1]
         if selection == SingleScriptMatch.SKIP:
             return AddResponse.SKIP
         if selection == SingleScriptMatch.CANCEL:
