@@ -17,11 +17,11 @@ def cli():
 @click.option('--alias', '-a', type=str, help='Alias for the script.')
 @click.option('--python', '-p', type=click.Path(exists=True, path_type=Path),
               help='Python executable to use (auto-detected if not specified)')
-def add(path: Path, alias: Optional[str], python: Optional[Path]):
+def add(script_path: Path, alias: Optional[str], python: Optional[Path]):
     """Register a Python script with an alias"""
     try:
         registry = Registry()
-        registry.add_script(path, alias, python)
+        registry.add_script(script_path, alias, python)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)

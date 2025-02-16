@@ -31,6 +31,8 @@ class Registry:
         if not script_path:
             raise ScriptNotFoundError(value=script_path)
 
+        alias = alias or script_path.stem
+
         if alias in [s["alias"] for s in self.scripts]:
             raise DuplicateAliasError(value=alias)
 
@@ -47,7 +49,7 @@ class Registry:
 
         self.scripts.append({
             "path": str(script_path),
-            "alias": alias or "",
+            "alias": alias,
             "python": str(python_path)
         })
 
