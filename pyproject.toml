@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "script_runner"
+license = "MIT"
 version = "0.1.0"
 description = "Run Python scripts with their virtual environments"
 requires-python = ">=3.8"

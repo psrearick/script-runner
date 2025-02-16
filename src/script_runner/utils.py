@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-def get_venv(script: Path, max_depth: int = 3, depth: int = 1) -> Optional[Path]:
+def get_venv(script: Path, max_depth: int = 5, depth: int = 1) -> Optional[Path]:
     """Get path to nearest virtual environment"""
     if depth > max_depth and max_depth > 0:
         return None
