@@ -1,52 +1,47 @@
 from pathlib import Path
+from typing import Optional, Protocol
 from script_runner.utils import get_venv
+import pytest
 
-def test_venv_detection(tmp_path: Path):
+@pytest.fixture
+def venv_path(tmp_path: Path):
     venv_path = tmp_path / "venv"
     venv_path.mkdir()
     (venv_path / "pyvenv.cfg").touch()
 
-    script_path = tmp_path / "script.py"
-    script_path.touch()
+    return venv_path
 
+class ScriptGetter(Protocol):
+    def __call__(self, path: Optional[str] = "") -> Path: ...
+
+@pytest.fixture
+def get_script(tmp_path: Path):
+    def _get_script(path: Optional[str] = "") -> Path:
+        script_dir = (tmp_path / path) if path else tmp_path
+        script_dir.mkdir(parents=True, exist_ok=True)
+        script_path = script_dir / "script.py"
+        script_path.touch()
+
+        return script_path
+
+    return _get_script
+
+def test_venv_detection(venv_path: Path, get_script: ScriptGetter):
+    script_path = get_script()
     detected_venv = get_venv(script_path)
     assert detected_venv == venv_path
 
-def test_venv_detection_in_nested_dir(tmp_path: Path):
-    venv_path = tmp_path / "venv"
-    venv_path.mkdir()
-    (venv_path / "pyvenv.cfg").touch()
-
-    script_dir = tmp_path / "scripts" / "scripts_of_type"
-    script_dir.mkdir(parents=True)
-    script_path = script_dir / "script.py"
-    script_path.touch()
-
+def test_venv_detection_in_nested_dir(venv_path: Path, get_script: ScriptGetter):
+    script_path = get_script("scripts/scripts_of_type")
     detected_venv = get_venv(script_path)
     assert detected_venv == venv_path
 
-def test_venv_detection_max_depth(tmp_path: Path):
-    venv_path = tmp_path / "venv"
-    venv_path.mkdir()
-    (venv_path / "pyvenv.cfg").touch()
-
-    script_dir = tmp_path / "scripts" / "scripts_of_type" / "scripts" / "are" / "deeper"
-    script_dir.mkdir(parents=True)
-    script_path = script_dir / "script.py"
-    script_path.touch()
-
+def test_venv_detection_max_depth(venv_path: Path, get_script: ScriptGetter):
+    script_path = get_script("scripts/scripts_of_type/scripts/are/deeper")
     detected_venv = get_venv(script_path)
     assert detected_venv == None
 
-def test_venv_detection_max_depth_override(tmp_path: Path):
-    venv_path = tmp_path / "venv"
-    venv_path.mkdir()
-    (venv_path / "pyvenv.cfg").touch()
-
-    script_dir = tmp_path / "scripts" / "scripts_of_type" / "scripts" / "are" / "deeper"
-    script_dir.mkdir(parents=True)
-    script_path = script_dir / "script.py"
-    script_path.touch()
-
+def test_venv_detection_max_depth_override(venv_path: Path, get_script: ScriptGetter):
+    script_path = get_script("scripts/scripts_of_type/scripts/are/deeper")
     detected_venv = get_venv(script_path, max_depth=0)
     assert detected_venv == venv_path
