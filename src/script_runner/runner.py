@@ -1,37 +1,31 @@
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 import click
 
+from script_runner.exceptions import ScriptNotFoundError
+
 def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple()):
-    script = Path(script_info['path']).resolve()
-    venv = Path(script_info.get("venv", sys.executable)).resolve()
+    script_path = Path(script_info['path']).resolve()
+    python_path = Path(script_info['python']).resolve()
 
-    if sys.platform == "win32":
-        python_path = venv / "Scripts" / "python.exe"
-    else:
-        python_path = venv / "bin" / "python"
-
-    if not script.exists():
-        raise FileNotFoundError(f"Script not found: {script}")
+    if not script_path.exists():
+        raise ScriptNotFoundError(value = script_path)
     if not python_path.exists():
-        raise FileNotFoundError(f"Python executable not found in: {python_path}")
+        raise FileNotFoundError(f"Python not found: {python_path}")
 
-    cmd: List[Any] = [str(python_path), str(script), *args]
+    result = subprocess.run(
+        [str(python_path), str(script_path), *args],
+        text=True,
+        capture_output=True
+    )
 
-    try:
-        result = subprocess.run(
-            cmd,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True
-        )
-        click.echo(result.stdout.rstrip("\n"))
-    except subprocess.CalledProcessError as e:
-        click.echo(f"Script failed with exit code {e.returncode}")
-        click.echo("stdout: " + e.stdout.rstrip("\n"))
-        click.echo("stderr: " + e.stderr.rstrip("\n"))
-        raise
+    if result.stdout:
+        click.echo(result.stdout.rstrip())
+    if result.stderr:
+        click.echo(result.stderr.rstrip(), err=True)
+
+    if result.returncode != 0:
+        sys.exit(result.returncode)
