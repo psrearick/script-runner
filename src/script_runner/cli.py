@@ -1,7 +1,8 @@
 from pathlib import Path
+import sys
 from typing import Any, Optional, Tuple
 
-from script_runner.exceptions import AliasNotFoundError, ScriptNotFoundError
+from script_runner.exceptions import AliasNotFoundError
 from .runner import run_script
 from .config import Registry
 import click
@@ -12,77 +13,29 @@ def cli():
     pass
 
 @cli.command()
-@click.argument('path', type=click.Path(exists=True, resolve_path=True, path_type=Path))
+@click.argument('script_path', type=click.Path(exists=True, path_type=Path))
 @click.option('--alias', '-a', type=str, help='Alias for the script.')
-@click.option('--venv-depth', '-d', type=int, default=3, show_default=True, help='Number of ancestors to search for virtual environment.')
-@click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='Path to virtual environment.')
-@click.option('--no-venv', '-n', is_flag=True, show_default=True, default=False, help='Do not use a virtual environment.')
-@click.option('--force', '-f', is_flag=True, show_default=True, default=False, help='Do not prompt for duplicate checks.')
-def add(path: Path, alias: str, venv_depth: int = 3, venv: Optional[Path] = None, no_venv: bool = False, force: bool = False):
-    """Add a script or directory to the registry"""
-    registry = Registry()
-    if no_venv:
-        venv = None
-
-    registry.add_script(path, alias=alias, venv=venv, venv_depth=venv_depth, force=force)
-
-@cli.command()
-@click.argument('script', type=str)
-@click.argument('args', nargs=-1)
-def run(script: str, args: Tuple[Any] = tuple()):
-    """Run a registered script"""
-    registry = Registry()
+@click.option('--python', '-p', type=click.Path(exists=True, path_type=Path),
+              help='Python executable to use (auto-detected if not specified)')
+def add(path: Path, alias: Optional[str], python: Optional[Path]):
+    """Register a Python script with an alias"""
     try:
-        script_info = registry.get_script(script)
-        if script_info:
-            run_script(script_info, args)
-        else:
-            click.echo(f"Script '{script}' not found")
+        registry = Registry()
+        registry.add_script(path, alias, python)
     except Exception as e:
-        click.echo(e)
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
 
 @cli.command()
-@click.argument('name', type=str)
-@click.option('--path', 'p', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='The new path to the registered script.')
-@click.option('--alias', '-a', type=str, help='New alias for the directory or script.')
-@click.option('--venv', '-v', type=click.Path(exists=True, resolve_path=True, path_type=Path), help='Path to new virtual environment.')
-@click.option('--no-venv', '-n', is_flag=True, show_default=True, default=False, help='Remove the virtual environment in the registry.')
-def update(name: str, path: Path, alias: str, venv: Optional[Path] = None, no_venv: bool = False):
-    """Update a registered script or directory"""
-    if no_venv:
-        venv = None
-
+def list():
+    """List registered scripts"""
     registry = Registry()
-    try:
-        registry.update_script(name, path, alias, venv)
-    except ScriptNotFoundError as e:
-        click.echo(e)
-    except:
-        click.echo('Failed to Update Registry')
+    if not registry.scripts:
+        click.echo("No scripts registered")
+        return
 
-@cli.command()
-@click.argument('name', type=str)
-def delete_alias(name: str):
-    """Delete a registered alias"""
-    registry = Registry()
-    try:
-        registry.delete_alias(name)
-    except AliasNotFoundError as e:
-        click.echo(e)
-    except:
-        click.echo('Failed to Delete Item')
-
-@cli.command()
-@click.argument('path', type=click.Path(exists=True, resolve_path=True, path_type=Path))
-def delete_path(path: Path):
-    """Delete all aliases for file or directory"""
-    registry = Registry()
-    try:
-        registry.delete_script(path)
-    except ScriptNotFoundError as e:
-        click.echo(e)
-    except:
-        click.echo('Failed to Delete Item')
+    for script in registry.scripts:
+        click.echo(f"{script['alias']}: {script['path']}")
 
 @cli.command()
 def prune():
@@ -91,19 +44,30 @@ def prune():
     registry.prune()
 
 @cli.command()
-@click.argument('directory', type=str)
-def update_dir(directory: str):
-    """Register missing scripts in directory and prune it"""
-    registry = Registry()
+@click.argument('alias', type=str)
+def remove(alias: str):
+    """Delete a registered alias"""
     try:
-        registry.update_directory(directory)
-    except ScriptNotFoundError as e:
-        click.echo(e)
+        registry = Registry()
+        registry.remove_alias(alias)
+    except AliasNotFoundError as e:
+        click.echo(e, err=True)
     except:
-        click.echo('Failed to Update Directory')
+        click.echo('Failed to Delete Item')
 
 @cli.command()
-def update_dirs():
-    """Register missing scripts in all directories and prune them"""
-    registry = Registry()
-    registry.update_directories()
+@click.argument('alias', type=str)
+@click.argument('args', nargs=-1)
+def run(alias: str, args: Tuple[Any] = tuple()):
+    """Run a registered script"""
+    try:
+        registry = Registry()
+        script = registry.get_script(alias)
+        if not script:
+            click.echo(f"Error: Alias '{alias}' not found", err=True)
+            sys.exit(1)
+
+        run_script(script, args)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
