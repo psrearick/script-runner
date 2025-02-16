@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import sys
-from typing import Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 from .utils import get_venv
 from .exceptions import AliasNotFoundError, DuplicateAliasError, ScriptNotFoundError
 
@@ -63,11 +63,15 @@ class Registry:
 
         return match
 
-    def prune(self):
-        for script in self.scripts:
+    def prune(self) -> Generator[Any, None, str|None]:
+        for i in range(len(self.scripts) - 1, -1, -1):
+            script = self.scripts[i]
             path = Path(script["path"])
             if not path.exists():
-                self.remove_alias(script["alias"])
+                alias = script["alias"]
+                del self.scripts[i]
+                yield alias
+        self.save()
 
     def remove_alias(self, alias: str):
         script = self.get_script(alias)

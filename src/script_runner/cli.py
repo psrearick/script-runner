@@ -41,7 +41,8 @@ def list():
 def prune():
     """Remove all non-existent scripts and directories"""
     registry = Registry()
-    registry.prune()
+    for pruned in registry.prune():
+        click.echo(f"Removed Alias: {pruned}")
 
 @cli.command()
 @click.argument('alias', type=str)
