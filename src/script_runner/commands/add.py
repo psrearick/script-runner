@@ -144,12 +144,16 @@ class AddScript():
                 path: Path, alias: Optional[str]=None, venv: Optional[Path]=None,
                 venv_depth: int = 3, force: bool = False):
         if path.is_dir():
-            dir_id = str(uuid4())
-            self.registry.directories.append({
-                "id": dir_id,
-                "path": str(path),
-                "venv": str(venv) if venv else ""
-            })
+            existing_directory = next(
+                (directory for directory in self.registry.directories if directory["path"] == str(path)),
+                None)
+            dir_id = existing_directory["id"] if existing_directory else str(uuid4())
+            if not existing_directory:
+                self.registry.directories.append({
+                    "id": dir_id,
+                    "path": str(path),
+                    "venv": str(venv) if venv else str(get_venv(path))
+                })
             for script in get_runnable_scripts(path, False):
                 response = self._add_single_script(script, dir_id=dir_id, venv=venv, venv_depth=venv_depth, force=force)
                 if response == AddResponse.CANCEL or response == AddResponse.FAILED:

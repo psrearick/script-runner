@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
 from typing import Dict, List, Optional
-
 from .exceptions import ScriptNotFoundError
 from .commands.add import AddScript
 from .commands.delete import DeleteScript
+from .utils import get_venv
 
 class Registry:
     def __init__(self):
@@ -42,7 +42,7 @@ class Registry:
         adder.add_script(path=path, alias=alias,
                         venv=venv, venv_depth=venv_depth, force=force)
 
-    def get_script(self, identifier: str) -> Optional[Dict[str, str]]:
+    def get_script(self, identifier: str) -> Dict[str, str]:
         alias_match: List[Dict[str, str]] = []
 
         for script in self.scripts:
@@ -66,5 +66,12 @@ class Registry:
     def update_directory(self, name: str):
         pass
 
-    def update_script(self, name: str, path: Optional[Path], alias: Optional[str]=None, venv: Optional[Path]=None):
+    def update_script(self, name: str, path: Path, alias: Optional[str]=None, venv: Optional[Path]=None):
+        # script = self.get_script(name)
+
+        # script.update({
+        #     "path": str(path),
+        #     "alias": alias if alias else path.stem,
+        #     "venv": str(venv) if venv else str(get_venv(path))
+        # })
         pass
