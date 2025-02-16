@@ -4,11 +4,10 @@ from typing import Dict, List, Optional
 from .exceptions import ScriptNotFoundError
 from .commands.add import AddScript
 from .commands.delete import DeleteScript
-from .utils import get_venv
 
 class Registry:
-    def __init__(self):
-        self.config_dir = Path.home() / ".config" / "script_runner"
+    def __init__(self, config_dir: Optional[Path] = None):
+        self.config_dir = config_dir or Path.home() / ".config" / "script_runner"
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.scripts_file = self.config_dir / "scripts.json"
         self.directories_file = self.config_dir / "directories.json"
