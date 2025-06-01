@@ -61,7 +61,8 @@ def remove(alias: str):
 @cli.command()
 @click.argument('alias', type=str)
 @click.argument('args', nargs=-1)
-def run(alias: str, args: Tuple[Any] = tuple()):
+@click.option('--verbose', '-v', is_flag=True, help='Show script output')
+def run(alias: str, args: Tuple[Any] = tuple(), verbose: bool = False):
     """Run a registered script"""
     try:
         registry = Registry()
@@ -70,7 +71,7 @@ def run(alias: str, args: Tuple[Any] = tuple()):
             click.echo(f"Error: Alias '{alias}' not found", err=True)
             sys.exit(1)
 
-        run_script(script, args)
+        run_script(script, args, verbose)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)

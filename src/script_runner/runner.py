@@ -7,7 +7,7 @@ import click
 
 from script_runner.exceptions import ScriptNotFoundError
 
-def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple()):
+def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple(), verbose: bool = False):
     script_path = Path(script_info['path']).resolve()
     interpreter_path = Path(script_info['interpreter']).resolve()
     script_type = script_info.get('type', 'python')
@@ -34,16 +34,19 @@ def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple()):
         # Fallback for unknown types
         cmd = [str(interpreter_path), str(script_path), *args]
 
-    result = subprocess.run(
-        cmd,
-        text=True,
-        capture_output=True
-    )
-
-    if result.stdout:
-        click.echo(result.stdout.rstrip())
-    if result.stderr:
-        click.echo(result.stderr.rstrip(), err=True)
+    if verbose:
+        # Stream output in real-time when verbose
+        result = subprocess.run(
+            cmd,
+            text=True
+        )
+    else:
+        # Capture and discard output when not verbose
+        result = subprocess.run(
+            cmd,
+            text=True,
+            capture_output=True
+        )
 
     if result.returncode != 0:
         sys.exit(result.returncode)
