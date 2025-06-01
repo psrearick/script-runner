@@ -9,19 +9,20 @@ import click
 
 @click.group()
 def cli():
-    """Script Runner - manage and run Python scripts with virtual environments"""
+    """Script Runner - manage and run Python and shell scripts"""
     pass
 
 @cli.command()
 @click.argument('script_path', type=click.Path(exists=True, path_type=Path))
 @click.option('--alias', '-a', type=str, help='Alias for the script.')
-@click.option('--python', '-p', type=click.Path(exists=True, path_type=Path),
-              help='Python executable to use (auto-detected if not specified)')
-def add(script_path: Path, alias: Optional[str], python: Optional[Path]):
-    """Register a Python script with an alias"""
+@click.option('--interpreter', '-i', type=click.Path(exists=True, path_type=Path),
+              help='Specific interpreter to use (auto-detected if not specified)')
+def add(script_path: Path, alias: Optional[str], interpreter: Optional[Path]):
+    """Register a Python or shell script with an alias"""
     try:
         registry = Registry()
-        registry.add_script(script_path, alias, python)
+        registry.add_script(script_path, alias, interpreter)
+        click.echo(f"Added script '{alias or script_path.stem}' -> {script_path}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
@@ -35,7 +36,8 @@ def list():
         return
 
     for script in registry.scripts:
-        click.echo(f"{script['alias']}: {script['path']}")
+        script_type = script.get('type', 'python')
+        click.echo(f"{script['alias']} ({script_type}): {script['path']}")
 
 @cli.command()
 def prune():

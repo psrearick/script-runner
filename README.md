@@ -1,16 +1,19 @@
 # Script Runner
 
-Script Runner is a command-line tool that helps you manage and run Python scripts with their associated virtual environments. It automatically detects virtual environments and allows you to create aliases for your scripts, making them easier to run from anywhere.
+Script Runner is a command-line tool that helps you manage and run Python and shell scripts with their associated interpreters and virtual environments. It automatically detects script types, virtual environments for Python scripts, and allows you to create aliases for your scripts, making them easier to run from anywhere.
 
 ## Features
 
-- Register Python scripts with easy-to-remember aliases
+- Register Python and shell scripts with easy-to-remember aliases
+- Automatic script type detection (Python vs shell) based on file extension and shebang
 - Automatic virtual environment detection for Python scripts
-- Run scripts using their associated Python environment
-- List all registered scripts
+- Support for various shell types (bash, zsh, sh, fish)
+- Run scripts using their associated interpreter or virtual environment
+- List all registered scripts with type information
 - Remove scripts from the registry
 - Prune non-existent scripts automatically
 - Cross-platform support (Windows and Unix-like systems)
+- Backward compatibility with existing Python-only configurations
 
 ## Installation
 
@@ -22,23 +25,28 @@ pip install script_runner
 
 1. Register a script:
 ```bash
+# Python script
 script_runner add path/to/your/script.py -a myscript
+
+# Shell script
+script_runner add path/to/your/script.sh -a myshell
 ```
 
 2. Run the script using its alias:
 ```bash
 script_runner run myscript [args...]
+script_runner run myshell [args...]
 ```
 
 ## Commands
 
-- `add`: Register a Python script
+- `add`: Register a Python or shell script
   ```bash
-  script_runner add PATH [-a ALIAS] [-p PYTHON_PATH]
+  script_runner add PATH [-a ALIAS] [-i INTERPRETER_PATH]
   ```
-  - `PATH`: Path to the Python script
+  - `PATH`: Path to the Python or shell script
   - `-a, --alias`: Custom alias for the script (defaults to script filename)
-  - `-p, --python`: Specific Python executable to use (auto-detected if not specified)
+  - `-i, --interpreter`: Specific interpreter to use (auto-detected if not specified)
 
 - `run`: Execute a registered script
   ```bash
@@ -65,6 +73,16 @@ script_runner run myscript [args...]
 ## Configuration
 
 Script Runner stores its configuration in `~/.config/script_runner/scripts.json`. This file contains the mapping between aliases and their corresponding scripts, along with the Python executable path for each script.
+
+## Script Type Detection
+
+Script Runner automatically detects whether a script is a Python script or a shell script using the following methods:
+
+1. **File Extension**: `.py` files are detected as Python, `.sh`, `.bash`, `.zsh`, `.fish` files are detected as shell scripts
+2. **Shebang Line**: For files without extensions, the shebang line is analyzed:
+   - `#!/usr/bin/env python3`, `#!/usr/bin/python` → Python script
+   - `#!/bin/bash`, `#!/usr/bin/env zsh` → Shell script
+3. **Executable Files**: Files that are executable but don't match the above patterns default to shell scripts
 
 ## Virtual Environment Detection
 

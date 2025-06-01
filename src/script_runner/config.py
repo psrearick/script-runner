@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import sys
 from typing import Any, Dict, Generator, List, Optional
-from .utils import get_venv
+from .utils import get_venv, get_script_type, get_interpreter_path
 from .exceptions import AliasNotFoundError, DuplicateAliasError, ScriptNotFoundError
 
 class Registry:
@@ -17,7 +17,22 @@ class Registry:
 
     def _load_json(self, path: Path) -> List[Dict[str, str]]:
         if path.exists():
-            return json.loads(path.read_text())
+            scripts = json.loads(path.read_text())
+            # Migrate old format to new format for backward compatibility
+            for script in scripts:
+                if "python" in script and "interpreter" not in script:
+                    # Old format - migrate to new format
+                    script["interpreter"] = script.pop("python")
+                    script["type"] = "python"
+                elif "interpreter" not in script:
+                    # Handle edge case of malformed data
+                    script["interpreter"] = sys.executable
+                    script["type"] = "python"
+                elif "type" not in script:
+                    # Missing type field - detect it
+                    script_path = Path(script["path"])
+                    script["type"] = get_script_type(script_path) if script_path.exists() else "python"
+            return scripts
         return []
 
     def save(self):
@@ -26,9 +41,9 @@ class Registry:
     def add_script(self,
                 script_path: Path,
                 alias: Optional[str]=None,
-                python_path: Optional[Path]=None):
+                interpreter_path: Optional[Path]=None):
         script_path = script_path.resolve()
-        if not script_path:
+        if not script_path.exists():
             raise ScriptNotFoundError(value=script_path)
 
         alias = alias or script_path.stem
@@ -36,21 +51,20 @@ class Registry:
         if alias in [s["alias"] for s in self.scripts]:
             raise DuplicateAliasError(value=alias)
 
-        if not python_path:
-            venv = get_venv(script_path)
-            if venv:
-                python_path = venv / ('Scripts' if sys.platform == 'win32' else 'bin') / 'python'
-            else:
-                python_path = Path(sys.executable)
+        # Detect script type
+        script_type = get_script_type(script_path)
 
-        python_path = python_path.resolve()
-        if not python_path.exists():
-            raise FileNotFoundError(f"Python executable not found: {python_path}")
+        # Get appropriate interpreter
+        interpreter = get_interpreter_path(script_path, script_type, interpreter_path)
+
+        if not interpreter.exists():
+            raise FileNotFoundError(f"Interpreter not found: {interpreter}")
 
         self.scripts.append({
             "path": str(script_path),
             "alias": alias,
-            "python": str(python_path)
+            "interpreter": str(interpreter),
+            "type": script_type
         })
 
         self.save()
@@ -74,6 +88,9 @@ class Registry:
         self.save()
 
     def remove_alias(self, alias: str):
-        script = self.get_script(alias)
-        del script
-        self.save()
+        for i, script in enumerate(self.scripts):
+            if script["alias"] == alias:
+                del self.scripts[i]
+                self.save()
+                return
+        raise AliasNotFoundError(value=alias)
