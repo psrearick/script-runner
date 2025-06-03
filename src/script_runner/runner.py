@@ -7,7 +7,7 @@ import click
 
 from script_runner.exceptions import ScriptNotFoundError
 
-def run_script(script_info: Dict[str, str], args: Tuple[Any]=tuple(), verbose: bool = False):
+def run_script(script_info: Dict[str, str], args: Tuple[str, ...], verbose: bool = False):
     script_path = Path(script_info['path']).resolve()
     interpreter_path = Path(script_info['interpreter']).resolve()
     script_type = script_info.get('type', 'python')

@@ -58,11 +58,11 @@ def remove(alias: str):
     except:
         click.echo('Failed to Delete Item')
 
-@cli.command()
+@cli.command(context_settings={"ignore_unknown_options": True, "allow_extra_args": True})
 @click.argument('alias', type=str)
-@click.argument('args', nargs=-1)
+@click.argument('script_args', nargs=-1, type=click.UNPROCESSED)
 @click.option('--verbose', '-v', is_flag=True, help='Show script output')
-def run(alias: str, args: Tuple[Any] = tuple(), verbose: bool = False):
+def run(alias: str, script_args: Tuple[str, ...], verbose: bool = False):
     """Run a registered script"""
     try:
         registry = Registry()
@@ -71,7 +71,7 @@ def run(alias: str, args: Tuple[Any] = tuple(), verbose: bool = False):
             click.echo(f"Error: Alias '{alias}' not found", err=True)
             sys.exit(1)
 
-        run_script(script, args, verbose)
+        run_script(script, script_args, verbose)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
