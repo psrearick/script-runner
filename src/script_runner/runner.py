@@ -51,11 +51,11 @@ def run_script(script_info: Dict[str, str], args: Tuple[str, ...], verbose: bool
     # Get activated environment for virtual environments (use original path for detection)
     env = get_activated_env(interpreter_path_original, script_type)
 
-    if verbose and env:
-        print(f"Activating virtual environment: {env.get('VIRTUAL_ENV')}")
-        print(f"Using interpreter: {interpreter_path}")
-    elif verbose:
-        print(f"No virtual environment detected for: {interpreter_path}")
+    # if verbose and env:
+    #     print(f"Activating virtual environment: {env.get('VIRTUAL_ENV')}")
+    #     print(f"Using interpreter: {interpreter_path}")
+    # elif verbose:
+    #     print(f"No virtual environment detected for: {interpreter_path}")
 
     # Build command based on script type
     if script_type == 'python':
