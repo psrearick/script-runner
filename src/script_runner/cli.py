@@ -1,11 +1,12 @@
 from pathlib import Path
 import sys
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 from script_runner.exceptions import AliasNotFoundError
 from .runner import run_script
 from .config import Registry
 import click
+from .utils import get_script_type, get_interpreter_path
 
 @click.group()
 def cli():
@@ -16,7 +17,7 @@ def cli():
 @click.argument('script_path', type=click.Path(exists=True, path_type=Path))
 @click.option('--alias', '-a', type=str, help='Alias for the script.')
 @click.option('--interpreter', '-i', type=click.Path(exists=True, path_type=Path),
-              help='Specific interpreter to use (auto-detected if not specified)')
+            help='Specific interpreter to use (auto-detected if not specified)')
 def add(script_path: Path, alias: Optional[str], interpreter: Optional[Path]):
     """Register a Python or shell script with an alias"""
     try:
@@ -66,12 +67,38 @@ def run(alias: str, script_args: Tuple[str, ...], verbose: bool = False):
     """Run a registered script"""
     try:
         registry = Registry()
-        script = registry.get_script(alias)
-        if not script:
+        try:
+            script = registry.get_script(alias)
+        except (StopIteration, AliasNotFoundError):
             click.echo(f"Error: Alias '{alias}' not found", err=True)
             sys.exit(1)
 
         run_script(script, script_args, verbose)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+@cli.command(context_settings={"ignore_unknown_options": True, "allow_extra_args": True})
+@click.argument('script_path', type=click.Path(exists=True, path_type=Path))
+@click.argument('script_args', nargs=-1, type=click.UNPROCESSED)
+@click.option('--interpreter', '-i', type=click.Path(exists=True, path_type=Path),
+            help='Specific interpreter to use (auto-detected if not specified)')
+@click.option('--verbose', '-v', is_flag=True, help='Show script output')
+def exec(script_path: Path, script_args: Tuple[str, ...], interpreter: Optional[Path], verbose: bool):
+    """Run a script file directly without registering it"""
+    try:
+        script_type = get_script_type(script_path)
+        script_path = script_path.resolve()
+        interpreter_path = get_interpreter_path(script_path, script_type, interpreter)
+        script_info = {
+            "path": str(script_path),
+            "alias": "ad-hoc",
+            "interpreter": str(interpreter_path),
+            "type": script_type
+        }
+
+        run_script(script_info, script_args, verbose)
+
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
